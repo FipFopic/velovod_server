@@ -1,0 +1,179 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  status       UserStatus   @default(ACTIVED)
+  refreshToken String?      @map("refresh_token")
+  email        String       @unique
+  password     String
+  vkId         String?      @unique @map("vk_id")
+  profile      Profile?
+  routes       Route[]
+  routePoints  RoutePoint[]
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Profile {
+  id             Int         @id @default(autoincrement())
+  user           User        @relation(fields: [userId], references: [id])
+  userId         Int         @unique @map("user_id")
+  name           String
+  avatar         String?
+  mobilePhone    String?     @map("mobile_phone")
+  birthday       DateTime?
+  isEmailConfirm Boolean     @default(false) @map("email_confirm")
+  statistics     Statistics?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}
+
+model Statistics {
+  id        Int     @id @default(autoincrement())
+  profile   Profile @relation(fields: [profileId], references: [id])
+  profileId Int     @unique @map("profile_id")
+  // level   Level @relation(fields: [levelId], references: [id])
+  // levelId Int   @unique @map("level_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("statistics")
+}
+
+// model Level {
+//   id          Int     @id @default(autoincrement())
+//   title       String
+//   description String?
+//   min         Int     @default(0)
+//   max         Int
+
+//   createdAt  DateTime     @default(now()) @map("created_at")
+//   updatedAt  DateTime     @updatedAt @map("updated_at")
+//   Statistics Statistics[]
+
+//   @@map("levels")
+// }
+
+// model UserLevelUp {
+//   id     Int  @id @default(autoincrement())
+//   user   User @relation(fields: [userId], references: [id])
+//   userId Int  @unique @map("user_id")
+//   value  Int
+
+//   @@map("user_level_up")
+// }
+
+model Route {
+  id          Int          @id @default(autoincrement())
+  status      RouteStatus  @default(NOT_CONFIRMED)
+  type        RouteType    @default(LITE)
+  photo       String
+  title       String
+  description String?
+  polyne      String?
+  duration    Int // In seconds
+  distance    Int          @default(0) // In meters
+  asphalt     Float        @default(0) @db.Real // In meters
+  unpaved     Float        @default(0) @db.Real // In meters
+  cobblestone Float        @default(0) @db.Real // In meters
+  unknown     Float        @default(0) @db.Real // In meters
+  placeId     Int?
+  points      RoutePoint[]
+  user        User         @relation(fields: [byUserId], references: [id])
+  byUserId    Int          @map("by_user_id")
+  confirmDate DateTime?    @map("confirm_date")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("routes")
+}
+
+model RoutePoint {
+  id          Int         @id @default(autoincrement())
+  status      PointStatus @default(ACTIVED)
+  route       Route       @relation(fields: [routeId], references: [id])
+  routeId     Int         @map("route_id")
+  user        User        @relation(fields: [byUserId], references: [id])
+  byUserId    Int         @map("by_user_id")
+  order       Int
+  photo       String?
+  title       String
+  description String?
+  latitude    Float       @db.Real
+  longitude   Float       @db.Real
+  radius      Float       @default(50) @db.Real
+  palceId     Int?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("route_points")
+}
+
+// model Quest {
+//   id          Int         @id @default(autoincrement())
+//   status      PointState @default(ACTIVED)
+//     title       String
+//   description String?
+//   polyline  String?
+//   duration    Int // In seconds
+//   ditance     Int @default(0)
+//    asphalt     Int  @default(0)
+//   unpaved     Int @default(0)
+//   unknown     Int @default(0)
+//   placeId     Int @default(0)
+//   isGroup    Boolean   @default(true)
+//   isOne      Boolean   @default(true)
+//   isPoinRandom  Boolean @default(true)
+//   startDate DateTime    @map("start_date")
+//   endDate DateTime    @map("end_date")
+//     user        User        @relation(fields: [byUserId], references: [id])
+//   byUserId    Int         @unique @map("by_user_id")
+//   confirmDate DateTime    @map("confirm_date")
+//   createdAt   DateTime    @default(now()) @map("created_at")
+//   updatedAt   DateTime    @updatedAt @map("updated_at")
+
+//   @@map("quests")
+// }
+
+enum UserStatus {
+  ACTIVED
+  FROZEN
+  BLOCKED
+}
+
+enum RouteStatus {
+  NOT_CONFIRMED
+  MODERATION
+  CONFIRMED
+  BLOCKED
+}
+
+enum RouteType {
+  LITE
+  NORMAL
+  HEAVY
+}
+
+// enum QuestStatus {
+//   NOT_CONFIRMED
+//   MODERATION
+//   CONFIRMED
+//   BLOCKED
+// }
+
+enum PointStatus {
+  ACTIVED
+  BLOCKED
+}
